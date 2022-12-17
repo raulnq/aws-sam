@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Sample SAM Template for aot-app
+
+Globals:
+  Function:
+    Timeout: 10
+    Handler: bootstrap
+    Runtime: provided.al2
+    MemorySize: 512
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref TasksTable
+
+Resources:
+  TasksTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+      TableName: taskstable
+
+  ListTaskFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: dotnet7
+    Properties:
+      CodeUri: ./src/ListTaskFunction/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        ListTask:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: get
+
+  PostTaskFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: dotnet7
+    Properties:
+      CodeUri: ./src/PostTaskFunction/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        ListTask:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: post
+
+  GetTaskFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: dotnet7
+    Properties:
+      CodeUri: ./src/GetTaskFunction/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        ListTask:
+          Type: Api
+          Properties:
+            Path: /tasks/{id}
+            Method: get
+
+Outputs:
+  TaskApi:
+    Description: "API Gateway endpoint URL for Prod stage for Tasks function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/tasks/"
